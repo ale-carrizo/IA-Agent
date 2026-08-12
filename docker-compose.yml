@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16        # postgres 16 + extensión vector (para la KB)
+    container_name: sales_ai_pg
+    environment:
+      POSTGRES_USER: nods
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cambiar_esto}
+      POSTGRES_DB: agentes
+    ports: ["5433:5432"]          # host 5433 (5432 ya estaba ocupado en esta máquina)
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # los .sql de db/ se corren SOLOS la primera vez que se crea el volumen
+      - ./db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nods -d agentes"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: sales_ai_n8n
+    ports: ["5678:5678"]
+    environment:
+      N8N_SECURE_COOKIE: "false"
+      N8N_RUNNERS_ENABLED: "true"
+      GENERIC_TIMEZONE: "America/Mexico_City"
+      # n8n usa SU PROPIA base para guardar workflows (no la de agentes)
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_DATABASE: agentes
+      DB_POSTGRESDB_USER: nods
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-cambiar_esto}
+      DB_POSTGRESDB_SCHEMA: n8n        # n8n vive en su propio schema, separado de las tablas del motor
+    volumes:
+      - n8ndata:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata: {}
+  n8ndata: {}

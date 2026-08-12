@@ -1,0 +1,205 @@
+{
+ "name": "Pulido IA",
+ "nodes": [
+  {
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "pulido-ia",
+    "responseMode": "responseNode",
+    "options": {}
+   },
+   "id": "pul00000-0000-0000-0000-000000000001",
+   "name": "Webhook Pulido",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    0,
+    300
+   ],
+   "webhookId": "3236385e-398c-47f6-8c1e-0969fdb255e1"
+  },
+  {
+   "parameters": {
+    "operation": "executeQuery",
+    "query": "select\n  (select json_agg(json_build_object('lead',mensaje_lead,'bot',respuesta_bot,'etapa',etapa_nombre,'razon',razon,'bloqueado',bloqueado) order by creado_en) from mensajes_log where agente_id = '{{ $json.body.agente_id }}' and telefono = '{{ $json.body.telefono }}') as conversacion,\n  (select json_agg(json_build_object('id',id,'nombre',nombre,'objetivo',objetivo,'calificacion',calificacion,'reglas',reglas) order by orden) from etapas where agente_id = '{{ $json.body.agente_id }}') as etapas,\n  (select json_agg(json_build_object('nombre',nombre,'regla',regla)) from guardrails where agente_id = '{{ $json.body.agente_id }}') as guardrails,\n  (select row_to_json(a) from (select nombre,rol,persona,tono from agentes where id = '{{ $json.body.agente_id }}') a) as agente,\n  (select coalesce(bool_or(pausado),false) from conversaciones where agente_id='{{ $json.body.agente_id }}' and telefono='{{ $json.body.telefono }}') as pausado,\n  (select coalesce(bool_or(transbordado),false) from conversaciones where agente_id='{{ $json.body.agente_id }}' and telefono='{{ $json.body.telefono }}') as transbordado,\n  (select json_agg(json_build_object('feedback',feedback,'causa',causa,'etapa',etapa_nombre,'estado',estado,'propuesto',left(coalesce(texto_propuesto,''),120)) order by creado_en desc) from (select * from pulido_casos where agente_id='{{ $json.body.agente_id }}' order by creado_en desc limit 15) xx) as casos_previos,\n  (select json_agg(json_build_object('causa',causa,'n',n) order by n desc) from (select causa, count(*)::int n from pulido_casos where agente_id='{{ $json.body.agente_id }}' and causa is not null group by causa) yy) as patrones_causa,\n  (select json_agg(json_build_object('etapa',etapa_nombre,'n',n) order by n desc) from (select etapa_nombre, count(*)::int n from pulido_casos where agente_id='{{ $json.body.agente_id }}' and etapa_nombre is not null group by etapa_nombre) zz) as patrones_etapa;",
+    "options": {}
+   },
+   "id": "pul00000-0000-0000-0000-000000000002",
+   "name": "Juntar contexto",
+   "type": "n8n-nodes-base.postgres",
+   "typeVersion": 2.5,
+   "position": [
+    220,
+    300
+   ],
+   "credentials": {
+    "postgres": {
+     "id": "nWZKvu4jsnyJP3s2",
+     "name": "maisa test"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "jsCode": "const b = $('Webhook Pulido').first().json.body;\nconst ctx = $json;\nconst conv = (ctx.conversacion||[]).slice(-30).map((t,i)=>`[${i+1}] (etapa: ${t.etapa||'?'}${t.bloqueado?', BLOQUEADO':''})\\nLead: ${t.lead||''}\\nBot: ${t.bot||''}${t.razon?('\\n(router: '+t.razon+')'):''}`).join('\\n\\n') || '(sin turnos)';\nconst etapas = (ctx.etapas||[]).map(e=>`### ETAPA id:${e.id} | ${e.nombre} (calif ${e.calificacion})\\nObjetivo: ${e.objetivo||''}\\nReglas:\\n${e.reglas||''}`).join('\\n\\n');\nconst guard = (ctx.guardrails||[]).map(g=>`- ${g.nombre}: ${g.regla}`).join('\\n');\nconst ag = ctx.agente||{};\nconst pc = (ctx.patrones_causa||[]).map(p=>`${p.causa}: ${p.n}`).join(', ') || 'ninguno';\nconst pe = (ctx.patrones_etapa||[]).map(p=>`${p.etapa}: ${p.n}`).join(', ') || 'ninguno';\nconst prev = (ctx.casos_previos||[]).map((k,i)=>`(${i+1}) [${k.estado}] causa=${k.causa} etapa=${k.etapa||'-'} :: feedback: ${k.feedback} :: fix: ${k.propuesto||''}`).join('\\n') || '(sin casos previos)';\nconst sys = `Sos un OPTIMIZADOR EXPERTO de agentes de ventas conversacionales por WhatsApp (universidades). Razoná a fondo y paso a paso.\\n\\nRecibís: (A) CONVERSACIÓN real (con la etapa de cada respuesta), (B) FEEDBACK del analista, (C) CONFIG del agente (etapas+reglas, guardrails, persona/tono), (D) flags pausado/transbordado, (E) MEMORIA: patrones históricos y casos previos de este agente.\\n\\nTAREA:\\n1) Diagnosticá la CAUSA RAÍZ (qué etapa/regla la originó). Si es 'no responde', mirá pausado/transbordado/bloqueo.\\n2) Mirá la MEMORIA: si este problema YA apareció antes (patrón recurrente), marcá es_patron=true, estimá frecuencia, y proponé un fix MÁS SISTÉMICO (no un parche puntual).\\n3) Proponé UN cambio CONCRETO y MÍNIMO que no rompa lo que funciona. Preferí ajustar las REGLAS de la etapa responsable.\\n\\nDevolvé SOLO JSON válido: {\\\"diagnostico\\\":\\\"...\\\",\\\"causa\\\":\\\"no_responde|muy_agresivo|salto_de_etapa|poco_consultivo|alucinacion|tono|otro\\\",\\\"es_patron\\\":true|false,\\\"frecuencia\\\":<int>,\\\"etapa_id\\\":\\\"<id o null>\\\",\\\"etapa_nombre\\\":\\\"...\\\",\\\"campo\\\":\\\"reglas|objetivo|persona|tono|guardrail_nuevo|config\\\",\\\"accion\\\":\\\"append|replace|insert\\\",\\\"texto_actual\\\":\\\"<fragmento exacto o ''>\\\",\\\"texto_propuesto\\\":\\\"<el cambio>\\\",\\\"justificacion\\\":\\\"...\\\",\\\"conclusion\\\":\\\"si es patrón, qué recomendás a nivel sistema\\\",\\\"riesgo\\\":\\\"bajo|medio|alto\\\"}`;\nconst usr = `FEEDBACK:\\n${b.feedback}\\n\\nFLAGS: pausado=${ctx.pausado}, transbordado=${ctx.transbordado}\\n\\n=== MEMORIA (este agente) ===\\nPatrones por causa: ${pc}\\nPatrones por etapa: ${pe}\\nCasos previos:\\n${prev}\\n\\n=== CONVERSACIÓN ===\\n${conv}\\n\\n=== CONFIG ===\\nPersona: ${ag.persona} | Tono: ${ag.tono}\\nGUARDRAILS:\\n${guard}\\nETAPAS:\\n${etapas}`;\nreturn [{ json: { payload: { model:'o4-mini', response_format:{type:'json_object'}, messages:[{role:'system',content:sys},{role:'user',content:usr}] } } }];"
+   },
+   "id": "pul00000-0000-0000-0000-000000000003",
+   "name": "Armar prompt pulido",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    440,
+    300
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/chat/completions",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "openAiApi",
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.payload) }}",
+    "options": {}
+   },
+   "id": "pul00000-0000-0000-0000-000000000004",
+   "name": "Razonar (OpenAI)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    660,
+    300
+   ],
+   "credentials": {
+    "openAiApi": {
+     "id": "owxgABRkNZx86whx",
+     "name": "OpenAi account"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "jsCode": "const raw = $json.choices?.[0]?.message?.content || '{}';\nlet p; try { p = JSON.parse(raw); } catch(e){ p = { error:'no_parse', raw }; }\nif (p.etapa_id && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(p.etapa_id))) p.etapa_id = null;\nif (typeof p.frecuencia !== 'number') p.frecuencia = 1;\nreturn [{ json: p }];"
+   },
+   "id": "pul00000-0000-0000-0000-000000000005",
+   "name": "Parsear propuesta",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    880,
+    300
+   ]
+  },
+  {
+   "parameters": {
+    "respondWith": "json",
+    "responseBody": "={{ JSON.stringify(Object.assign({}, $('Parsear propuesta').item.json, { caso_id: ($json && $json.id) || null })) }}",
+    "options": {}
+   },
+   "id": "pul00000-0000-0000-0000-000000000006",
+   "name": "Responder propuesta",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    1100,
+    300
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "executeQuery",
+    "query": "insert into pulido_casos (agente_id, telefono, feedback, diagnostico, causa, etapa_id, etapa_nombre, campo, accion, texto_actual, texto_propuesto, justificacion, riesgo, es_patron, frecuencia) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) returning id",
+    "options": {
+     "queryReplacement": "={{ [ $('Webhook Pulido').item.json.body.agente_id, $('Webhook Pulido').item.json.body.telefono, $('Webhook Pulido').item.json.body.feedback, ($json.diagnostico||''), ($json.causa||'otro'), $json.etapa_id, ($json.etapa_nombre||''), ($json.campo||''), ($json.accion||''), ($json.texto_actual||''), ($json.texto_propuesto||''), ($json.justificacion||''), ($json.riesgo||''), ($json.es_patron||false), ($json.frecuencia||1) ] }}"
+    }
+   },
+   "id": "pul00000-0000-0000-0000-000000000007",
+   "name": "Guardar caso",
+   "type": "n8n-nodes-base.postgres",
+   "typeVersion": 2.5,
+   "position": [
+    1100,
+    480
+   ],
+   "credentials": {
+    "postgres": {
+     "id": "nWZKvu4jsnyJP3s2",
+     "name": "maisa test"
+    }
+   },
+   "onError": "continueRegularOutput"
+  }
+ ],
+ "connections": {
+  "Webhook Pulido": {
+   "main": [
+    [
+     {
+      "node": "Juntar contexto",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Juntar contexto": {
+   "main": [
+    [
+     {
+      "node": "Armar prompt pulido",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Armar prompt pulido": {
+   "main": [
+    [
+     {
+      "node": "Razonar (OpenAI)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Razonar (OpenAI)": {
+   "main": [
+    [
+     {
+      "node": "Parsear propuesta",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Parsear propuesta": {
+   "main": [
+    [
+     {
+      "node": "Guardar caso",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Guardar caso": {
+   "main": [
+    [
+     {
+      "node": "Responder propuesta",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}

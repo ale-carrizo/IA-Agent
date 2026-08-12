@@ -1,0 +1,66 @@
+{
+  "name": "Scheduler Agendas",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 5 }] } },
+      "id": "ag100000-0000-0000-0000-000000000001",
+      "name": "Cada 5 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-200, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select a.id as agenda_id, a.conversacion_id, a.detalle,\n  c.telefono, c.contacto_id, c.canal_numero,\n  ca.botmaker_token, ca.handoff_intent_id, ca.cola\nfrom agendamientos a\njoin conversaciones c on c.id = a.conversacion_id\njoin canales ca on ca.canal_numero = c.canal_numero and ca.activo\nwhere a.estado = 'pendiente' and a.fecha_hora <= now()\n  and c.contacto_id is not null and ca.botmaker_token is not null;",
+        "options": {}
+      },
+      "id": "ag200000-0000-0000-0000-000000000002",
+      "name": "Buscar agendas vencidas",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [20, 300],
+      "credentials": { "postgres": { "id": "nWZKvu4jsnyJP3s2", "name": "maisa test" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://go.botmaker.com/api/v1.0/message/v3",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "access-token", "value": "={{ $json.botmaker_token }}" },
+          { "name": "Content-Type", "value": "application/json" }
+        ] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chatPlatform:'whatsapp', chatChannelNumber: $json.canal_numero, platformContactId: $json.contacto_id, messageText: '¡Hola! 📅 Llegó el horario que agendamos para tu asesoría. En un momento te contacta un asesor especializado para avanzar. ¡Gracias por tu tiempo! 😊' }) }}",
+        "options": {}
+      },
+      "id": "ag300000-0000-0000-0000-000000000003",
+      "name": "Enviar aviso agenda",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 300],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "update agendamientos set estado = 'ejecutado' where id = '{{ $('Buscar agendas vencidas').item.json.agenda_id }}'::uuid;\nupdate conversaciones set transbordado = true, cola_actual = coalesce('{{ $('Buscar agendas vencidas').item.json.cola }}','asesores') where id = '{{ $('Buscar agendas vencidas').item.json.conversacion_id }}'::uuid;\ninsert into conversacion_eventos (conversacion_id, tipo, detalle) values ('{{ $('Buscar agendas vencidas').item.json.conversacion_id }}'::uuid, 'transbordo', jsonb_build_object('origen','agenda','agenda_id','{{ $('Buscar agendas vencidas').item.json.agenda_id }}'));",
+        "options": {}
+      },
+      "id": "ag400000-0000-0000-0000-000000000004",
+      "name": "Marcar ejecutado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [460, 300],
+      "credentials": { "postgres": { "id": "nWZKvu4jsnyJP3s2", "name": "maisa test" } }
+    }
+  ],
+  "connections": {
+    "Cada 5 min": { "main": [[{ "node": "Buscar agendas vencidas", "type": "main", "index": 0 }]] },
+    "Buscar agendas vencidas": { "main": [[{ "node": "Enviar aviso agenda", "type": "main", "index": 0 }]] },
+    "Enviar aviso agenda": { "main": [[{ "node": "Marcar ejecutado", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

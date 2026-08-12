@@ -1,0 +1,8 @@
+web/node_modules
+web/.next
+storage/node_modules
+node_modules
+**/.env
+railway.secret.txt
+n8n
+db

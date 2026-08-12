@@ -1,0 +1,121 @@
+{
+ "name": "Sync uso_tokens",
+ "nodes": [
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "minutes",
+       "minutesInterval": 10
+      }
+     ]
+    }
+   },
+   "id": "sy100000-0000-0000-0000-000000000001",
+   "name": "Cada 10 min",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    0,
+    300
+   ]
+  },
+  {
+   "parameters": {
+    "url": "https://n8n-ac1b.srv1490495.hstgr.cloud/api/v1/executions?workflowId=x2HCf0kkjuZ8e6b8&status=success&limit=50&includeData=true",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth",
+    "options": {}
+   },
+   "id": "sy200000-0000-0000-0000-000000000002",
+   "name": "Traer ejecuciones",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    220,
+    300
+   ],
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "xjwBeY3WGnBFT6OG",
+     "name": "n8n API self"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "jsCode": "const body = $json;\nconst execs = Array.isArray(body.data) ? body.data : [];\nconst out = [];\nfor (const e of execs) {\n  const rd = (e.data && e.data.resultData && e.data.resultData.runData) || {};\n  const cm = rd['Chat Model'];\n  if (!cm) continue;\n  let pt=0, ct=0, modelo='desconocido';\n  for (const run of cm) {\n    try {\n      const j = run.data.ai_languageModel[0][0].json;\n      const tu = j.tokenUsage || {};\n      pt += tu.promptTokens||0; ct += tu.completionTokens||0;\n      modelo = (j.response.generations[0][0].generationInfo.model_name) || modelo;\n    } catch(err){}\n  }\n  let conv=null, etapa=null;\n  try { conv = rd['Cargar estado'][0].data.main[0][0].json.id; } catch(err){}\n  try { etapa = rd['Cargar etapa activa'][0].data.main[0][0].json.id; } catch(err){}\n  if (!conv || (pt===0 && ct===0)) continue;\n  out.push({ json: { execution_id: String(e.id), creado_en: String(e.startedAt || e.stoppedAt || ''), conversacion_id: conv, etapa_id: etapa || '', modelo, prompt_tokens: pt, completion_tokens: ct } });\n}\nreturn out;"
+   },
+   "id": "sy300000-0000-0000-0000-000000000003",
+   "name": "Extraer tokens",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    440,
+    300
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "executeQuery",
+    "query": "insert into uso_tokens (execution_id, conversacion_id, etapa_id, modelo, prompt_tokens, completion_tokens, creado_en)\nselect '{{ $json.execution_id }}','{{ $json.conversacion_id }}'::uuid, nullif('{{ $json.etapa_id }}','')::uuid, '{{ $json.modelo }}', {{ $json.prompt_tokens }}, {{ $json.completion_tokens }}, coalesce(nullif('{{ $json.creado_en }}','')::timestamptz, now())\nwhere exists (select 1 from conversaciones where id='{{ $json.conversacion_id }}'::uuid)\non conflict (execution_id) do nothing;",
+    "options": {}
+   },
+   "id": "sy400000-0000-0000-0000-000000000004",
+   "name": "Insertar tokens",
+   "type": "n8n-nodes-base.postgres",
+   "typeVersion": 2.5,
+   "position": [
+    660,
+    300
+   ],
+   "credentials": {
+    "postgres": {
+     "id": "nWZKvu4jsnyJP3s2",
+     "name": "maisa test"
+    }
+   }
+  }
+ ],
+ "connections": {
+  "Cada 10 min": {
+   "main": [
+    [
+     {
+      "node": "Traer ejecuciones",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Traer ejecuciones": {
+   "main": [
+    [
+     {
+      "node": "Extraer tokens",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Extraer tokens": {
+   "main": [
+    [
+     {
+      "node": "Insertar tokens",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1",
+  "callerPolicy": "workflowsFromSameOwner",
+  "availableInMCP": false
+ }
+}

@@ -1,0 +1,173 @@
+{
+ "name": "insights-ia",
+ "nodes": [
+  {
+   "id": "wh-ins-1",
+   "name": "Webhook Insights",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "84184fcf-e066-41a6-85ea-d8d0ca58ca5e",
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "insights-ia",
+    "responseMode": "responseNode",
+    "options": {}
+   }
+  },
+  {
+   "id": "pg-ins-1",
+   "name": "Juntar datos",
+   "type": "n8n-nodes-base.postgres",
+   "typeVersion": 2.5,
+   "position": [
+    220,
+    0
+   ],
+   "credentials": {
+    "postgres": {
+     "id": "nWZKvu4jsnyJP3s2",
+     "name": "maisa test"
+    }
+   },
+   "parameters": {
+    "operation": "executeQuery",
+    "query": "select\n (select coalesce(json_agg(t),'[]'::json) from (select mensaje_lead as p, respuesta_bot as r, etapa_nombre from mensajes_log where agente_id=$1::uuid and coalesce(mensaje_lead,'')<>'' order by creado_en desc limit 250) t) as dialogos,\n (select coalesce(json_agg(json_build_object('nombre',nombre,'objetivo',left(coalesce(objetivo,''),200))),'[]'::json) from etapas where agente_id=$1::uuid and activo) as etapas",
+    "options": {
+     "queryReplacement": "={{ [ $json.body.agente_id ] }}"
+    }
+   }
+  },
+  {
+   "id": "cd-ins-1",
+   "name": "Armar prompt insights",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    440,
+    0
+   ],
+   "parameters": {
+    "jsCode": "const d = $json;\nconst dialogos = d.dialogos || [];\nconst etapas = d.etapas || [];\nconst sys = 'Sos un analista senior de Business Intelligence para agentes de ventas conversacionales de universidades. Analizás diálogos reales entre leads y el bot para extraer inteligencia de negocio accionable. Sé concreto: citá ejemplos textuales de los diálogos. Respondé SOLO JSON válido con esta forma exacta: {\"resumen\":\"3-4 oraciones ejecutivas sobre qué buscan los leads y cómo responde el bot\",\"temas_frecuentes\":[{\"tema\":\"...\",\"frecuencia\":\"alta|media|baja\",\"ejemplo\":\"cita textual\"}],\"objeciones\":[{\"objecion\":\"...\",\"ejemplo\":\"cita textual\",\"sugerencia\":\"cómo manejarla mejor\"}],\"huecos_kb\":[{\"pregunta\":\"pregunta que el bot NO pudo responder bien o derivó sin necesidad\",\"motivo\":\"...\"}],\"recomendaciones\":[\"accion concreta para mejorar conversion o precision\"]}. Max 6 temas, 5 objeciones, 6 huecos, 5 recomendaciones.';\nconst usr = 'ETAPAS DEL AGENTE:\\n' + etapas.map(e=>'- '+e.nombre+': '+(e.objetivo||'')).join('\\n')\n  + '\\n\\nDIALOGOS RECIENTES (lead -> bot), del mas nuevo al mas viejo:\\n'\n  + dialogos.map(x=>'[' + (x.etapa_nombre||'?') + '] LEAD: ' + (x.p||'') + '\\nBOT: ' + String(x.r||'').slice(0,300)).join('\\n---\\n');\nreturn [{ json: { payload: { model: 'o4-mini', response_format: { type: 'json_object' }, messages: [ { role: 'system', content: sys }, { role: 'user', content: usr.slice(0, 180000) } ] } } }];"
+   }
+  },
+  {
+   "id": "ht-ins-1",
+   "name": "Razonar (OpenAI)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    660,
+    0
+   ],
+   "credentials": {
+    "openAiApi": {
+     "id": "owxgABRkNZx86whx",
+     "name": "OpenAi account"
+    }
+   },
+   "retryOnFail": true,
+   "maxTries": 2,
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/chat/completions",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "openAiApi",
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.payload) }}",
+    "options": {
+     "timeout": 120000
+    }
+   }
+  },
+  {
+   "id": "cd-ins-2",
+   "name": "Parsear analisis",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    880,
+    0
+   ],
+   "parameters": {
+    "jsCode": "let out = {};\ntry { out = JSON.parse($json.choices[0].message.content); } catch (e) { out = { error: 'parse', raw: String($json.choices?.[0]?.message?.content||'').slice(0,500) }; }\nout.generado_en = new Date().toISOString();\nout.dialogos_analizados = $('Juntar datos').first().json.dialogos ? $('Juntar datos').first().json.dialogos.length : 0;\nreturn [{ json: out }];"
+   }
+  },
+  {
+   "id": "rs-ins-1",
+   "name": "Responder analisis",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    1100,
+    0
+   ],
+   "parameters": {
+    "respondWith": "json",
+    "responseBody": "={{ JSON.stringify($json) }}",
+    "options": {}
+   }
+  }
+ ],
+ "connections": {
+  "Webhook Insights": {
+   "main": [
+    [
+     {
+      "node": "Juntar datos",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Juntar datos": {
+   "main": [
+    [
+     {
+      "node": "Armar prompt insights",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Armar prompt insights": {
+   "main": [
+    [
+     {
+      "node": "Razonar (OpenAI)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Razonar (OpenAI)": {
+   "main": [
+    [
+     {
+      "node": "Parsear analisis",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Parsear analisis": {
+   "main": [
+    [
+     {
+      "node": "Responder analisis",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ }
+}

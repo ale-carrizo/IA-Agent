@@ -1,0 +1,34 @@
+# deps / build
+node_modules/
+web/node_modules/
+storage/node_modules/
+.next/
+web/.next/
+dist/
+*.log
+
+# env / secrets (NUNCA commitear)
+.env
+.env.local
+.env.*.local
+web/.env
+web/.env.local
+*.secret.txt
+railway.secret.txt
+
+# n8n: archivos de trabajo / exports en vivo / backups (NO son fuente; pueden tener estado/tokens)
+n8n/_*
+
+# scripts ad-hoc con credenciales hardcodeadas (regenerables)
+n8n/apply-*.cjs
+n8n/fix-*.cjs
+n8n/seed-*.cjs
+web/_bench_*.cjs
+web/_scratch/
+n8n/load-kb-faq.cjs
+n8n/qa-run.cjs
+web/fix-guardrail-regex.cjs
+
+# OS
+.DS_Store
+Thumbs.db

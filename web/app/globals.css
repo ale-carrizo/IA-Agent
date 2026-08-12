@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 220 20% 97%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --border: 225 18% 92%;
+  --input: 225 18% 92%;
+  --ring: 227 80% 49%;
+  --muted: 220 20% 96%;
+  --muted-foreground: 220 9% 46%;
+  --primary: 227 80% 49%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 20% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --accent: 227 85% 96%;
+  --accent-foreground: 227 80% 49%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --whatsapp: 142 70% 49%;
+  --sidebar: 0 0% 100%;
+  --sidebar-border: 225 18% 92%;
+  --sidebar-foreground: 215 20% 30%;
+  --sidebar-accent: 227 85% 96%;
+  --sidebar-accent-foreground: 227 80% 49%;
+  --radius: 0.625rem;
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+
+  /* Paleta del dashboard (page.tsx la referencia como var(--c-*)) — LIGHT */
+  --c-bg: #F6F7F9;
+  --c-sidebar: #FFFFFF;
+  --c-card: #FFFFFF;
+  --c-border: #E6E8EE;
+  --c-text: #0E1526;
+  --c-muted: #6B7280;
+  --c-faint: #9AA1AE;
+  --c-blue: #1946E3;
+  --c-blue-l: #3B63F0;
+  --c-blue-soft: rgba(25,70,227,0.08);
+  --c-track: #EEF0F5;
+  --c-hover: #F1F2F6;
+}
+
+/* ── Tema oscuro (NODS dark) — se activa con .dark en <html> ── */
+.dark {
+  --background: 240 13% 5%;
+  --foreground: 0 0% 100%;
+  --card: 240 16% 8%;
+  --card-foreground: 0 0% 100%;
+  --border: 240 15% 17%;
+  --input: 240 15% 17%;
+  --ring: 227 80% 55%;
+  --muted: 240 14% 12%;
+  --muted-foreground: 240 9% 65%;
+  --secondary: 240 14% 12%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 240 30% 16%;
+  --accent-foreground: 227 90% 72%;
+  --sidebar: 240 16% 8%;
+  --sidebar-border: 240 15% 17%;
+  --sidebar-foreground: 240 9% 70%;
+  --sidebar-accent: 227 45% 18%;
+  --sidebar-accent-foreground: 227 90% 76%;
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 0 0 1px rgb(255 255 255 / 0.04);
+
+  /* Paleta del dashboard — DARK */
+  --c-bg: #0A0A0F;
+  --c-sidebar: #111118;
+  --c-card: #111118;
+  --c-border: #252535;
+  --c-text: #FFFFFF;
+  --c-muted: #9B9BB0;
+  --c-faint: #5A5A70;
+  --c-blue: #3B63F0;
+  --c-blue-l: #6B8AF7;
+  --c-blue-soft: rgba(59,99,240,0.16);
+  --c-track: #1A1A24;
+  --c-hover: #1A1A24;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'PP Mori', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+  }
+}
+
+/* ============================================================
+   Clases legacy (páginas aún no migradas) — re-tematizadas a LIGHT
+   para que se vean consistentes con el nuevo diseño.
+   ============================================================ */
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 18px 0 8px; }
+h3 { font-size: 14px; margin: 12px 0 6px; color: hsl(var(--muted-foreground)); }
+p.sub { color: hsl(var(--muted-foreground)); margin: 0 0 16px; }
+
+.shell { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 250px; flex-shrink: 0; background: hsl(var(--sidebar));
+  border-right: 1px solid hsl(var(--sidebar-border)); padding: 18px 12px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.content { flex: 1; padding: 28px 36px; max-width: 920px; }
+.navlink { display: block; padding: 9px 12px; border-radius: 8px; text-decoration: none; color: hsl(var(--sidebar-foreground)); font-size: 14px; margin-bottom: 2px; }
+.navlink:hover { background: hsl(var(--sidebar-accent)); color: hsl(var(--sidebar-accent-foreground)); }
+.navlink.active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.navlink .pct { float: right; font-size: 11px; opacity: 0.7; }
+
+.card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; box-shadow: var(--shadow-card); }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-weight: 600; margin-bottom: 4px; }
+.field .hint { color: hsl(var(--muted-foreground)); font-size: 12px; margin: 2px 0 6px; }
+.input, .select, .textarea { width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid hsl(var(--input)); background: hsl(var(--card)); color: hsl(var(--foreground)); font-family: inherit; font-size: 14px; }
+.textarea { min-height: 120px; resize: vertical; }
+.input:focus, .select:focus, .textarea:focus { outline: none; border-color: hsl(var(--ring)); box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+
+.btn { border: none; border-radius: 8px; padding: 9px 16px; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn.primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.btn.green { background: hsl(var(--success)); color: hsl(var(--success-foreground)); }
+.btn.ghost { background: hsl(var(--card)); color: hsl(var(--foreground)); border: 1px solid hsl(var(--border)); }
+.btn.danger { background: transparent; color: hsl(var(--destructive)); border: 1px solid hsl(var(--destructive)); }
+.btn.sm { padding: 5px 10px; font-size: 13px; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
+.badge.blue { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.badge.purple { background: hsl(262 83% 58%); color: #fff; }
+.badge.green { background: hsl(var(--success)); color: #fff; }
+.badge.amber { background: hsl(var(--warning)); color: #1a1205; }
+
+.pills { display: flex; gap: 10px; flex-wrap: wrap; }
+.pill { flex: 1; min-width: 140px; border: 1px solid hsl(var(--border)); border-radius: 10px; padding: 12px 14px; cursor: pointer; background: hsl(var(--card)); }
+.pill.active { border-color: hsl(var(--primary)); background: hsl(var(--primary) / 0.06); }
+.pill strong { display: block; }
+.pill span { color: hsl(var(--muted-foreground)); font-size: 12px; }
+
+.switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.switch .track { width: 40px; height: 22px; border-radius: 11px; background: hsl(var(--border)); position: relative; transition: background .15s; }
+.switch .track.on { background: hsl(var(--success)); }
+.switch .knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgb(0 0 0 / 0.2); }
+.switch .track.on .knob { left: 20px; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid hsl(var(--border)); margin-bottom: 18px; }
+.tab { padding: 9px 14px; cursor: pointer; color: hsl(var(--muted-foreground)); border: none; background: none; font-size: 14px; border-bottom: 2px solid transparent; font-family: inherit; }
+.tab.active { color: hsl(var(--foreground)); border-bottom-color: hsl(var(--primary)); }
+
+table.tbl { width: 100%; border-collapse: collapse; }
+table.tbl th, table.tbl td { text-align: left; padding: 8px 10px; border-bottom: 1px solid hsl(var(--border)); font-size: 13px; }
+table.tbl th { color: hsl(var(--muted-foreground)); font-weight: 600; }
+
+.toast { position: fixed; bottom: 20px; right: 20px; background: hsl(var(--success)); color: #fff; padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 50; box-shadow: var(--shadow-card); }
+.toast.err { background: hsl(var(--destructive)); }
+
+.muted { color: hsl(var(--muted-foreground)); }
+.mono { font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; }
+.empty { color: hsl(var(--muted-foreground)); padding: 20px; text-align: center; }
+.savebar { position: sticky; bottom: 0; background: linear-gradient(transparent, hsl(var(--background)) 40%); padding: 16px 0; margin-top: 20px; }
+
+/* ── NODS brand font: PP Mori (design system nods-frontend) ── */
+@font-face {
+  font-family: 'PP Mori';
+  src: url('/fonts/PPMori-Extralight.otf') format('opentype');
+  font-weight: 200; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'PP Mori';
+  src: url('/fonts/PPMori-Regular.otf') format('opentype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'PP Mori';
+  src: url('/fonts/PPMori-SemiBold.otf') format('opentype');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+.font-nods { font-family: 'PP Mori', ui-sans-serif, system-ui, sans-serif; }
