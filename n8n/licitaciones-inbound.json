@@ -1,0 +1,117 @@
+{
+  "name": "Licitaciones - Inbound (transporte)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitaciones-entrada",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "li100000-0000-0000-0000-000000000001",
+      "name": "Webhook proveedor",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-720, 300],
+      "webhookId": "li100000-0000-0000-0000-0000000000aa",
+      "notes": "ENTRADA. Recibe el mensaje del proveedor desde Botmaker / Kapso / WhatsApp Cloud.\nEste workflow es SOLO TRANSPORTE: no decide nada, no consulta precios, no toca la DB del dominio."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalización de transporte: cada proveedor de WhatsApp manda un shape\n// distinto y acá se lo lleva al contrato del servicio de negociación.\n// PROHIBIDO agregar lógica de dominio en este nodo (§4 del brief): si una\n// decisión de negocio termina acá, se rechaza en review.\nconst salida = [];\n\nfor (const item of $input.all()) {\n  const b = item.json.body || item.json;\n\n  // Botmaker\n  let telefono = b.contactId || b.platformContactId;\n  let texto = b.message || b.messageText || b.text;\n  let messageId = b.messageId || b.id;\n\n  // Kapso / Meta Cloud API\n  const kapso = b.data?.message || b.message;\n  if (!telefono && kapso) {\n    telefono = kapso.from;\n    texto = kapso.text?.body ?? kapso.body ?? texto;\n    messageId = kapso.id || messageId;\n  }\n\n  // WhatsApp Cloud API (payload crudo de Meta)\n  const meta = b.entry?.[0]?.changes?.[0]?.value?.messages?.[0];\n  if (!telefono && meta) {\n    telefono = meta.from;\n    texto = meta.text?.body ?? texto;\n    messageId = meta.id || messageId;\n  }\n\n  salida.push({\n    json: {\n      telefono_e164: String(telefono || '').replace(/\\D/g, ''),\n      texto: String(texto || '').trim(),\n      canal: b.canal || 'whatsapp',\n      message_id: String(messageId || ''),\n      procesable: Boolean(telefono && String(texto || '').trim()),\n    },\n  });\n}\n\nreturn salida;"
+      },
+      "id": "li100000-0000-0000-0000-000000000002",
+      "name": "Normalizar entrada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.procesable }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "li100000-0000-0000-0000-000000000003",
+      "name": "¿Es un mensaje?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-280, 300],
+      "notes": "Los proveedores de WhatsApp mandan también eventos de estado (entregado, leído).\nEsos se ackean sin molestar al servicio."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEGOCIACION_URL }}/mensajes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-token", "value": "={{ $env.NEGOCIACION_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ telefono_e164: $json.telefono_e164, texto: $json.texto, canal: $json.canal, message_id: $json.message_id }) }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "li100000-0000-0000-0000-000000000004",
+      "name": "POST /mensajes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-40, 200],
+      "onError": "continueRegularOutput",
+      "notes": "Todo el cerebro está del otro lado de este HTTP.\nSi tu n8n bloquea $env (N8N_BLOCK_ENV_ACCESS_IN_NODE), reemplazá por la URL literal del servicio."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, burbujas: ($json.burbujas || []), esperando_humano: ($json.esperando_humano || false) } }}",
+        "options": {}
+      },
+      "id": "li100000-0000-0000-0000-000000000005",
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [200, 200],
+      "onError": "continueRegularOutput",
+      "notes": "Las burbujas viajan de vuelta para el caso en que el canal responda sincrónico.\nLos envíos asincrónicos (recordatorios, primer mensaje) salen por 'Licitaciones - Salida'."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, ignorado: true } }}",
+        "options": {}
+      },
+      "id": "li100000-0000-0000-0000-000000000006",
+      "name": "Ack ignorado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-40, 400],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook proveedor": { "main": [[{ "node": "Normalizar entrada", "type": "main", "index": 0 }]] },
+    "Normalizar entrada": { "main": [[{ "node": "¿Es un mensaje?", "type": "main", "index": 0 }]] },
+    "¿Es un mensaje?": {
+      "main": [
+        [{ "node": "POST /mensajes", "type": "main", "index": 0 }],
+        [{ "node": "Ack ignorado", "type": "main", "index": 0 }]
+      ]
+    },
+    "POST /mensajes": { "main": [[{ "node": "Responder", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

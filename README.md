@@ -22,12 +22,20 @@ sales-ai-engine/
 ├─ db/
 │  ├─ 00-init.sql          # extensiones + schema n8n  (corre 1ro, automático)
 │  ├─ 01-schema.sql        # tablas del motor          (corre 2do, automático)
-│  └─ 02-seed.sql          # agente Guadalupe + etapas (corre 3ro, automático)
+│  ├─ 02-seed.sql          # agente Guadalupe + etapas (corre 3ro, automático)
+│  └─ 20-21               # dominio licitaciones (ver docs/LICITACIONES.md)
 ├─ n8n/
 │  ├─ motor-agente.json    # workflow importable (compilador YA inyectado)
 │  └─ compilador-prompt.js # referencia del Code node
+├─ negociacion/            # servicio Python (licitaciones) — LangGraph + FastAPI
 └─ web/                    # Next.js (frontend + API)
 ```
+
+> **Segundo dominio: licitaciones hospitalarias.** Al lado del motor de agentes
+> vive un sistema de cotización automática para una droguería (recolección de
+> precios por WhatsApp + presupuesto con aprobación humana). Comparte base,
+> canales y panel; **no toca el motor ni sus tenants en producción**.
+> Arquitectura y puesta en marcha: [`docs/LICITACIONES.md`](docs/LICITACIONES.md).
 
 ## Arranque (orden exacto)
 

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Cpu, Zap, MessageSquare, Phone, Bot, ChevronRight, ChevronDown, Plus, X, TrendingUp, Building2, GraduationCap,
-  DollarSign, ShieldAlert, ArrowRightLeft, LogOut, Moon, Sun, Trash2,
+  DollarSign, ShieldAlert, ArrowRightLeft, LogOut, Moon, Sun, Trash2, ClipboardList,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { api, useToast } from "@/lib/ui";
@@ -202,6 +202,13 @@ export default function DashboardPage() {
 
           {!loading && tenants.length === 0 && <div className="text-xs pl-2 py-2" style={{ color: C.muted }}>Sin universidades todavía.</div>}
         </div>
+
+        {/* Licitaciones: dominio propio (droguería), al lado del motor de agentes */}
+        <a href="/licitaciones"
+          className="mt-3 flex-shrink-0 flex items-center gap-2 h-10 px-3 rounded-[10px] text-sm font-medium transition-colors hover:bg-[var(--c-hover)]"
+          style={{ color: C.text, border: `1px solid ${C.border}` }}>
+          <ClipboardList className="w-4 h-4" style={{ color: C.blue }} /> Licitaciones
+        </a>
 
         {/* Crear bot — fijo abajo a la izquierda */}
         <button onClick={() => abrirCrear("")}

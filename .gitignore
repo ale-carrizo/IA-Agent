@@ -7,12 +7,20 @@ web/.next/
 dist/
 *.log
 
+# python (servicio de negociación)
+negociacion/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
 # env / secrets (NUNCA commitear)
 .env
 .env.local
 .env.*.local
 web/.env
 web/.env.local
+negociacion/.env
 *.secret.txt
 railway.secret.txt
 

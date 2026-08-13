@@ -1,0 +1,141 @@
+{
+  "name": "Licitaciones - Salida (transporte)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitaciones-salida",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ls100000-0000-0000-0000-000000000001",
+      "name": "Webhook salida",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-820, 300],
+      "webhookId": "ls100000-0000-0000-0000-0000000000aa",
+      "notes": "El servicio de negociación postea acá lo que hay que mandar.\nEs la frontera que hace que el servicio NUNCA hable con un canal directo (§4):\ncambiar de Botmaker a Kapso se resuelve en este workflow, sin tocar Python.\n\nBody: { telefono_e164, canal, burbujas: [texto], meta: {...} }"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Canal por el que sale el mensaje. Se reusa la tabla `canales` del motor:\n-- el dominio de licitaciones no necesita su propia configuración de WhatsApp.\nselect canal_numero, plataforma, botmaker_token, channel_id_botmaker,\n       kapso_api_key, kapso_phone_number_id\n  from canales\n where activo\n   and ($1 = '' or agente_id::text = $1)\n order by creado_en\n limit 1;",
+        "options": {
+          "queryReplacement": "={{ $env.LICITACIONES_AGENTE_ID || '' }}"
+        }
+      },
+      "id": "ls100000-0000-0000-0000-000000000002",
+      "name": "Buscar canal",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-600, 300],
+      "notes": "REEMPLAZAR: asignale la credencial Postgres del motor."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Una burbuja por item: el canal manda un mensaje por vez.\n// Sólo re-empaqueta; no modifica el texto (el texto ya pasó por guardrails\n// en el servicio y no se puede tocar acá).\nconst canal = $input.first().json;\nconst pedido = $('Webhook salida').first().json.body || $('Webhook salida').first().json;\nconst burbujas = Array.isArray(pedido.burbujas) ? pedido.burbujas : [pedido.burbujas].filter(Boolean);\n\nreturn burbujas.map((texto, i) => ({\n  json: {\n    orden: i,\n    texto: String(texto),\n    telefono: String(pedido.telefono_e164 || '').replace(/\\D/g, ''),\n    meta: pedido.meta || {},\n    canal_numero: canal.canal_numero,\n    plataforma: canal.plataforma,\n    botmaker_token: canal.botmaker_token,\n    channel_id_botmaker: canal.channel_id_botmaker,\n    kapso_api_key: canal.kapso_api_key,\n    kapso_phone_number_id: canal.kapso_phone_number_id,\n  },\n}));"
+      },
+      "id": "ls100000-0000-0000-0000-000000000003",
+      "name": "Una burbuja por item",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-380, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.plataforma }}",
+              "rightValue": "kapso",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "ls100000-0000-0000-0000-000000000004",
+      "name": "¿Kapso?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-160, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.kapso.ai/meta/whatsapp/v24.0/{{ $json.kapso_phone_number_id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "={{ $json.kapso_api_key }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $json.telefono, type: 'text', text: { body: $json.texto } }) }}",
+        "options": {}
+      },
+      "id": "ls100000-0000-0000-0000-000000000005",
+      "name": "Enviar por Kapso",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [80, 200],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://go.botmaker.com/api/v1.0/message/v3",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "access-token", "value": "={{ $json.botmaker_token }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chatPlatform: 'whatsapp', chatChannelNumber: $json.canal_numero, platformContactId: $json.telefono, messageText: $json.texto }) }}",
+        "options": {}
+      },
+      "id": "ls100000-0000-0000-0000-000000000006",
+      "name": "Enviar por Botmaker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [80, 400],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, enviadas: $items().length } }}",
+        "options": {}
+      },
+      "id": "ls100000-0000-0000-0000-000000000007",
+      "name": "Responder ok",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [320, 300],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook salida": { "main": [[{ "node": "Buscar canal", "type": "main", "index": 0 }]] },
+    "Buscar canal": { "main": [[{ "node": "Una burbuja por item", "type": "main", "index": 0 }]] },
+    "Una burbuja por item": { "main": [[{ "node": "¿Kapso?", "type": "main", "index": 0 }]] },
+    "¿Kapso?": {
+      "main": [
+        [{ "node": "Enviar por Kapso", "type": "main", "index": 0 }],
+        [{ "node": "Enviar por Botmaker", "type": "main", "index": 0 }]
+      ]
+    },
+    "Enviar por Kapso": { "main": [[{ "node": "Responder ok", "type": "main", "index": 0 }]] },
+    "Enviar por Botmaker": { "main": [[{ "node": "Responder ok", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,0 +1,79 @@
+{
+  "name": "Licitaciones - Scheduler /tick",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 5 }] }
+      },
+      "id": "lt100000-0000-0000-0000-000000000001",
+      "name": "Cada 5 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-400, 300],
+      "notes": "El reloj del supervisor. Todo lo que decide (recordatorios, escalaciones,\ncierre de recolección) vive en el servicio Python: acá sólo se lo despierta."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEGOCIACION_URL }}/tick",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-token", "value": "={{ $env.NEGOCIACION_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({}) }}",
+        "options": { "timeout": 300000 }
+      },
+      "id": "lt100000-0000-0000-0000-000000000002",
+      "name": "POST /tick",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-160, 300],
+      "onError": "continueRegularOutput",
+      "notes": "Idempotente: si un tick se pierde o corre dos veces, no rompe nada.\nEl timeout es largo porque el cierre de una licitación corre la auditoría completa."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": { "type": "object", "operation": "notEmpty", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "lt100000-0000-0000-0000-000000000003",
+      "name": "¿Falló?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [80, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Un /tick que falla es un problema operativo: si el supervisor no corre,\n// no salen recordatorios ni se cierra la recolección a horario.\n// Queda logueado en el historial de ejecuciones de n8n.\nconsole.error('[licitaciones] /tick falló', JSON.stringify($input.first().json));\nreturn $input.all();"
+      },
+      "id": "lt100000-0000-0000-0000-000000000004",
+      "name": "Loguear falla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 220]
+    }
+  ],
+  "connections": {
+    "Cada 5 min": { "main": [[{ "node": "POST /tick", "type": "main", "index": 0 }]] },
+    "POST /tick": { "main": [[{ "node": "¿Falló?", "type": "main", "index": 0 }]] },
+    "¿Falló?": { "main": [[{ "node": "Loguear falla", "type": "main", "index": 0 }], []] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
