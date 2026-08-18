@@ -203,7 +203,11 @@ def endpoint_licitaciones(l: LicitacionNueva, x_token: str | None = Header(defau
 
 
 @app.get("/licitaciones/{licitacion_id}/auditoria")
-def endpoint_auditoria(licitacion_id: int) -> dict:
+def endpoint_auditoria(licitacion_id: int, x_token: str | None = Header(default=None)) -> dict:
+    # También va con token: el servicio queda expuesto a internet (n8n vive
+    # fuera de Railway y tiene que alcanzarlo), y esta respuesta trae precios,
+    # proveedores y motivos de bloqueo.
+    _autorizar(x_token)
     try:
         return auditar(licitacion_id, registrar_evento=False)
     except ValueError as e:
@@ -278,7 +282,14 @@ def resume(r: Reanudar, x_token: str | None = Header(default=None)) -> dict:
 
 
 @app.get("/excepciones")
-def excepciones(licitacion_id: int | None = None, estado: str = "pendiente") -> dict:
+def excepciones(
+    licitacion_id: int | None = None,
+    estado: str = "pendiente",
+    x_token: str | None = Header(default=None),
+) -> dict:
+    # Trae el texto crudo de los proveedores y los precios en juego: no puede
+    # quedar abierto.
+    _autorizar(x_token)
     with conexion() as conn:
         filas = consultar(
             conn,
