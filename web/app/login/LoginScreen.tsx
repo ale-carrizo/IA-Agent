@@ -5,7 +5,7 @@ import { signIn } from 'next-auth/react';
 import { AlertCircle } from 'lucide-react';
 import './cover.css';
 
-export default function LoginScreen({ error: errorParam, callbackUrl = '/' }: { error?: string; callbackUrl?: string }) {
+export default function LoginScreen({ error: errorParam, callbackUrl = '/', conGoogle = false }: { error?: string; callbackUrl?: string; conGoogle?: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(
     errorParam === 'AccessDenied'
@@ -13,6 +13,8 @@ export default function LoginScreen({ error: errorParam, callbackUrl = '/' }: { 
       : errorParam ? 'No se pudo iniciar sesión. Intentá de nuevo.' : ''
   );
   const [stamp, setStamp] = useState('—');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const globeRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<HTMLCanvasElement | null>(null);
@@ -188,6 +190,21 @@ export default function LoginScreen({ error: errorParam, callbackUrl = '/' }: { 
     };
   }, []);
 
+  const handleCredenciales = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    // redirect:false para poder mostrar el error en la misma pantalla en vez
+    // de rebotar a /login?error=... y perder lo tipeado.
+    const r = await signIn('credentials', { email, password, redirect: false });
+    if (r?.error) {
+      setError('Email o contraseña incorrectos.');
+      setIsLoading(false);
+      return;
+    }
+    window.location.href = callbackUrl;
+  };
+
   const handleGoogle = async () => {
     setError('');
     setIsLoading(true);
@@ -258,22 +275,47 @@ export default function LoginScreen({ error: errorParam, callbackUrl = '/' }: { 
             </div>
           )}
 
-          <button type="button" onClick={handleGoogle} disabled={isLoading} className="cover-submit">
-            {isLoading ? (
-              <span className="cover-submit-loading">
-                <span className="cover-spinner" aria-hidden="true" />
-                Redirigiendo a Google…
-              </span>
-            ) : (
-              <>
+          <form onSubmit={handleCredenciales} className="cover-fields">
+            <label className="cover-label" htmlFor="email">Email</label>
+            <input
+              id="email" name="email" type="email" required autoComplete="username"
+              className="cover-input" value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="vos@tuempresa.com" disabled={isLoading}
+            />
+
+            <label className="cover-label" htmlFor="password">Contraseña</label>
+            <input
+              id="password" name="password" type="password" required autoComplete="current-password"
+              className="cover-input" value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••" disabled={isLoading}
+            />
+
+            <button type="submit" disabled={isLoading} className="cover-submit">
+              {isLoading ? (
+                <span className="cover-submit-loading">
+                  <span className="cover-spinner" aria-hidden="true" />
+                  Verificando…
+                </span>
+              ) : (
+                <>
+                  <span>Ingresar</span>
+                  <span className="cover-submit-arrow" aria-hidden="true">→</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {conGoogle && (
+            <>
+              <div className="cover-sep"><span>o</span></div>
+              <button type="button" onClick={handleGoogle} disabled={isLoading} className="cover-submit ghost">
                 <GoogleIcon />
                 <span>Continuar con Google</span>
-                <span className="cover-submit-arrow" aria-hidden="true">→</span>
-              </>
-            )}
-          </button>
+              </button>
+            </>
+          )}
 
-          <p className="cover-hint">Usá tu cuenta de correo corporativa. El acceso está restringido al dominio de la empresa.</p>
+          <p className="cover-hint">El acceso lo da un administrador del panel. Si no podés entrar, pedile que revise tu usuario.</p>
         </div>
 
         <div className="cover-meta">

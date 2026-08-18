@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { ChevronRight, ChevronDown, LogOut, Moon, Sun } from "lucide-react";
+import { ChevronRight, ChevronDown, LogOut, Moon, Sun, Users } from "lucide-react";
 import { useTheme } from "@/app/providers";
 
 export default function TopBar({ nombre }: { nombre: string }) {
@@ -77,6 +77,12 @@ function UserMenu() {
               </span>
               <Switch on={theme === "dark"} />
             </button>
+            {u.rol === "admin" && (
+              <Link href="/usuarios" onClick={() => setOpen(false)}
+                className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors border-t border-border">
+                <Users className="w-4 h-4" /> Usuarios
+              </Link>
+            )}
             <button onClick={() => signOut({ callbackUrl: "/login" })}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors border-t border-border">
               <LogOut className="w-4 h-4" /> Cerrar sesión

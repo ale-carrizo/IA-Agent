@@ -1,15 +1,10 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
 
-// El gate se activa SOLO cuando la auth está configurada (AUTH_SECRET + credenciales
-// de Google). Antes de eso pasa de largo, para no bloquear producción mientras
-// todavía no cargaste las credenciales. Apenas las cargás, protege todo.
-const AUTH_ENABLED = Boolean(
-  process.env.AUTH_SECRET && (process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID)
-);
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const middleware: any = AUTH_ENABLED ? auth : (_req: NextRequest) => NextResponse.next();
+// Solo la config edge-safe: el middleware valida el JWT y no toca la base.
+// El gate ya no es opcional — antes se desactivaba solo si faltaban las
+// credenciales de Google, y eso dejaba el panel entero abierto.
+export const { auth: middleware } = NextAuth(authConfig);
 
 export const config = {
   matcher: [
