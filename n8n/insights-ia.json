@@ -29,8 +29,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "parameters": {
@@ -65,7 +65,7 @@
    ],
    "credentials": {
     "openAiApi": {
-     "id": "owxgABRkNZx86whx",
+     "id": "OPENAI_CRED_ID",
      "name": "OpenAi account"
     }
    },

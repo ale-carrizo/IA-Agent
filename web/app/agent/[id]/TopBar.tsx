@@ -10,7 +10,7 @@ export default function TopBar({ nombre }: { nombre: string }) {
   return (
     <div className="flex items-center justify-between gap-4 mb-6">
       <div className="text-[11px] font-semibold flex items-center gap-1.5 text-muted-foreground min-w-0">
-        <Link href="/" className="text-primary hover:underline shrink-0">NODS</Link>
+        <Link href="/" className="text-primary hover:underline shrink-0">IA Agent</Link>
         <ChevronRight className="w-3 h-3 shrink-0" />
         <span className="text-primary truncate">{nombre}</span>
       </div>

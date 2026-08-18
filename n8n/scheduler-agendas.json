@@ -20,7 +20,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [20, 300],
-      "credentials": { "postgres": { "id": "nWZKvu4jsnyJP3s2", "name": "maisa test" } }
+      "credentials": { "postgres": { "id": "POSTGRES_CRED_ID", "name": "Postgres del motor" } }
     },
     {
       "parameters": {
@@ -54,7 +54,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [460, 300],
-      "credentials": { "postgres": { "id": "nWZKvu4jsnyJP3s2", "name": "maisa test" } }
+      "credentials": { "postgres": { "id": "POSTGRES_CRED_ID", "name": "Postgres del motor" } }
     }
   ],
   "connections": {

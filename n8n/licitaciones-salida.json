@@ -30,7 +30,7 @@
       "typeVersion": 2.5,
       "position": [-600, 300],
       "credentials": {
-        "postgres": { "id": "nWZKvu4jsnyJP3s2", "name": "maisa test" }
+        "postgres": { "id": "POSTGRES_CRED_ID", "name": "Postgres del motor" }
       },
       "notes": "Usa la MISMA credencial Postgres que el resto del motor. El id de acá es\nel de la instancia de origen: n8n/importar-workflows.cjs lo reescribe al\nid real del entorno destino con N8N_CRED_MAP."
     },
