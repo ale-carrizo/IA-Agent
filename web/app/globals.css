@@ -48,7 +48,7 @@
   --c-hover: #F1F2F6;
 }
 
-/* ── Tema oscuro (NODS dark) — se activa con .dark en <html> ── */
+/* ── Tema oscuro — se activa con .dark en <html> ── */
 .dark {
   --background: 240 13% 5%;
   --foreground: 0 0% 100%;
@@ -169,7 +169,7 @@ table.tbl th { color: hsl(var(--muted-foreground)); font-weight: 600; }
 .empty { color: hsl(var(--muted-foreground)); padding: 20px; text-align: center; }
 .savebar { position: sticky; bottom: 0; background: linear-gradient(transparent, hsl(var(--background)) 40%); padding: 16px 0; margin-top: 20px; }
 
-/* ── NODS brand font: PP Mori (design system nods-frontend) ── */
+/* ── Fuente de marca: PP Mori ── */
 @font-face {
   font-family: 'PP Mori';
   src: url('/fonts/PPMori-Extralight.otf') format('opentype');
@@ -185,4 +185,4 @@ table.tbl th { color: hsl(var(--muted-foreground)); font-weight: 600; }
   src: url('/fonts/PPMori-SemiBold.otf') format('opentype');
   font-weight: 600; font-style: normal; font-display: swap;
 }
-.font-nods { font-family: 'PP Mori', ui-sans-serif, system-ui, sans-serif; }
+.font-marca { font-family: 'PP Mori', ui-sans-serif, system-ui, sans-serif; }

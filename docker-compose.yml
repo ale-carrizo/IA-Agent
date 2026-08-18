@@ -3,7 +3,7 @@ services:
     image: pgvector/pgvector:pg16        # postgres 16 + extensión vector (para la KB)
     container_name: sales_ai_pg
     environment:
-      POSTGRES_USER: nods
+      POSTGRES_USER: iaagent
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cambiar_esto}
       POSTGRES_DB: agentes
     ports: ["5433:5432"]          # host 5433 (5432 ya estaba ocupado en esta máquina)
@@ -12,7 +12,7 @@ services:
       # los .sql de db/ se corren SOLOS la primera vez que se crea el volumen
       - ./db:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nods -d agentes"]
+      test: ["CMD-SHELL", "pg_isready -U iaagent -d agentes"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -29,7 +29,7 @@ services:
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
       DB_POSTGRESDB_DATABASE: agentes
-      DB_POSTGRESDB_USER: nods
+      DB_POSTGRESDB_USER: iaagent
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-cambiar_esto}
       DB_POSTGRESDB_SCHEMA: n8n        # n8n vive en su propio schema, separado de las tablas del motor
     volumes:

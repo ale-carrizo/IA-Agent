@@ -25,12 +25,12 @@
  *   Se aplica sobre los nodos serializados, justo antes de subirlos. El repo
  *   queda portable; la instancia queda con valores concretos.
  *
- * Remapeo de credenciales (opcional):
- *   Los JSON referencian credenciales por id de la instancia ORIGEN. En una
- *   instancia nueva esos ids no existen y los nodos quedan marcados en rojo
- *   hasta asignarles credencial. Si pasás un mapa, se reescriben al vuelo:
+ * Remapeo de credenciales (OBLIGATORIO):
+ *   Los JSON no traen ids de credencial reales: usan los placeholders
+ *   POSTGRES_CRED_ID y OPENAI_CRED_ID. Sin el mapa, los nodos quedan en rojo
+ *   hasta asignarles credencial a mano. Pasá los ids de TU instancia:
  *
- *   N8N_CRED_MAP='{"nWZKvu4jsnyJP3s2":"idNuevo","2JtBO4LRnTwexbCc":"otroId"}'
+ *   N8N_CRED_MAP='{"POSTGRES_CRED_ID":"idRealPostgres","OPENAI_CRED_ID":"idRealOpenAI"}'
  *
  * La API key y el mapa NUNCA se hardcodean acá: salen del entorno.
  */

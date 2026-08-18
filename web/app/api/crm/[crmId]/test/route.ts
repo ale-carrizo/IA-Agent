@@ -21,7 +21,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ crmId:
     ficha: {
       nombre: "Prueba",
       apellido: "Panel",
-      email: "test@gruponods.com",
+      email: "test@example.com",
       carrera_interes: "TEST",
       referral_source_type: "test",
       referral_source_id: "test",

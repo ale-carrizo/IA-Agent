@@ -118,7 +118,7 @@ export default function InformePage({ params }: { params: Promise<{ id: string }
               </div>
             </div>
             <div className="text-right text-xs text-muted-foreground">
-              <div className="font-semibold text-foreground">Sales AI · Grupo Nods</div>
+              <div className="font-semibold text-foreground">IA-AGENT</div>
               <div>Generado {new Date().toLocaleDateString("es-AR")}</div>
             </div>
           </div>

@@ -72,8 +72,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    }
   }

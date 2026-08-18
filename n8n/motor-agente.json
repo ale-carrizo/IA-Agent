@@ -35,8 +35,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "notes": "Carga/crea la conversación. Setea ultimo_mensaje_lead (ventana 24h), contacto_id y canal; resetea el tracking de follow-ups."
@@ -57,8 +57,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "notes": "Carga la etapa elegida con sus herramientas y variables vinculadas."
@@ -137,8 +137,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "notes": "Historial de chat por teléfono (ventana = mensajes_historial del agente)."
@@ -159,8 +159,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "notes": "Actualiza ultima_actividad y loguea evento de guardrail si bloqueó."
@@ -253,8 +253,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "notes": "ORQUESTADOR (4/4). Escribe etapa_actual_id + variables; registra el evento (transición/transbordo) y setea transbordado si la etapa tiene 'transferir'."
@@ -750,15 +750,15 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "notes": "Guarda el turno en mensajes_log (mensaje, respuesta, etapa, razón) para el visor de Conversaciones."
   },
   {
    "parameters": {
-    "jsCode": "const b = $json.body || {};\nconst urlImg = (m) => {\n  if (m.image) return String(m.image); // Botmaker manda la URL directa en 'image'\n  const ct = String(m.contentType || m.type || m.mediaType || '').toLowerCase();\n  const url = String(m.mediaUrl || m.mediaURL || m.media_url || '');\n  if (!url || ct.includes('audio') || m.audioUrl) return '';\n  return (ct.includes('image') || /\\.(jpe?g|png|gif|webp)(\\?|$)/i.test(url)) ? url : '';\n};\nif (b.agente_id && b.telefono) {\n  const imagenes = Array.isArray(b.imagenes) ? b.imagenes.filter(Boolean).map(String) : (b.imagen_url ? [String(b.imagen_url)] : []);\n  return [{ json: { procesar: !!b.mensaje || imagenes.length > 0, canal:'preview', agente_id:b.agente_id, telefono:String(b.telefono), mensaje:b.mensaje||'', imagenes, chat_channel:'', contact_id:String(b.telefono), chat_channel_id:'', nombre:String(b.nombre||'').trim(), queue_in:'' } }];\n}\nconst msgs = Array.isArray(b.messages) ? b.messages : [];\nconst userMsgs = msgs.filter(m => m && (m.fromCustomer===true || m.from==='user'));\nconst text = userMsgs.map(m=>m.message || m.caption).filter(Boolean).join(' | ');\nconst imagenes = userMsgs.map(urlImg).filter(Boolean);\nconst contactId = b.contactId || b.customerId || '';\nconst channel = b.whatsappNumber || '';\nconst msgId = (msgs[0] && (msgs[0]._id_ || msgs[0]._id)) || '';\nconst nombre = [b.firstName,b.lastName].filter(Boolean).join(' ').trim();\nconst queue_in = String((userMsgs.find(m=>m && m.queue) || (msgs.find(m=>m && m.queue) || {})).queue || '');\nconst MAP = { '5492914852219':'00000000-0000-0000-0000-0000000000a6', '5753161052':'00000000-0000-0000-0000-0000000000a6' };\nconst agente = MAP[String(channel)] || '00000000-0000-0000-0000-0000000000a6';\nreturn [{ json: { procesar: !!text || imagenes.length > 0, canal:'botmaker', agente_id:agente, telefono:String(contactId), mensaje:String(text), imagenes, chat_channel:String(channel), contact_id:String(contactId), chat_channel_id:String(b.chatChannelId || (channel ? 'nodslabsas-whatsapp-'+channel : '')), msg_id:String(msgId), nombre, queue_in, _raw:b } }];"
+    "jsCode": "const b = $json.body || {};\nconst urlImg = (m) => {\n  if (m.image) return String(m.image); // Botmaker manda la URL directa en 'image'\n  const ct = String(m.contentType || m.type || m.mediaType || '').toLowerCase();\n  const url = String(m.mediaUrl || m.mediaURL || m.media_url || '');\n  if (!url || ct.includes('audio') || m.audioUrl) return '';\n  return (ct.includes('image') || /\\.(jpe?g|png|gif|webp)(\\?|$)/i.test(url)) ? url : '';\n};\nif (b.agente_id && b.telefono) {\n  const imagenes = Array.isArray(b.imagenes) ? b.imagenes.filter(Boolean).map(String) : (b.imagen_url ? [String(b.imagen_url)] : []);\n  return [{ json: { procesar: !!b.mensaje || imagenes.length > 0, canal:'preview', agente_id:b.agente_id, telefono:String(b.telefono), mensaje:b.mensaje||'', imagenes, chat_channel:'', contact_id:String(b.telefono), chat_channel_id:'', nombre:String(b.nombre||'').trim(), queue_in:'' } }];\n}\nconst msgs = Array.isArray(b.messages) ? b.messages : [];\nconst userMsgs = msgs.filter(m => m && (m.fromCustomer===true || m.from==='user'));\nconst text = userMsgs.map(m=>m.message || m.caption).filter(Boolean).join(' | ');\nconst imagenes = userMsgs.map(urlImg).filter(Boolean);\nconst contactId = b.contactId || b.customerId || '';\nconst channel = b.whatsappNumber || '';\nconst msgId = (msgs[0] && (msgs[0]._id_ || msgs[0]._id)) || '';\nconst nombre = [b.firstName,b.lastName].filter(Boolean).join(' ').trim();\nconst queue_in = String((userMsgs.find(m=>m && m.queue) || (msgs.find(m=>m && m.queue) || {})).queue || '');\nconst MAP = {}; // numero de linea -> agente_id. Vacio = cae al agente por defecto.\nconst agente = MAP[String(channel)] || '00000000-0000-0000-0000-0000000000a6';\nreturn [{ json: { procesar: !!text || imagenes.length > 0, canal:'botmaker', agente_id:agente, telefono:String(contactId), mensaje:String(text), imagenes, chat_channel:String(channel), contact_id:String(contactId), chat_channel_id:String(b.chatChannelId || (channel ? 'TU_WORKSPACE_BOTMAKER-whatsapp-'+channel : '')), msg_id:String(msgId), nombre, queue_in, _raw:b } }];"
    },
    "id": "nz100000-0000-0000-0000-000000000001",
    "name": "Normalizar",
@@ -873,7 +873,7 @@
     },
     "sendBody": true,
     "specifyBody": "json",
-    "jsonBody": "={{ JSON.stringify({ chat: { channelId: ($('Ctx').item.json.chat_channel_id || ('nodslabsas-whatsapp-' + $('Ctx').item.json.chat_channel)), contactId: $('Ctx').item.json.contact_id }, messages: [ ...(($('Chequear guardrails').item.json.mensajes || [$('Chequear guardrails').item.json.respuesta_final]).filter(Boolean)).map(t=>({ text: t })), ...($('Chequear guardrails').item.json.pdf_a_enviar ? [{ media: { url: $('Chequear guardrails').item.json.pdf_a_enviar, filename: (($('Chequear guardrails').item.json.pdf_a_enviar.split('/').pop()||'material.pdf').replace(/^[0-9]+-/,'')), mimeType: 'application/pdf' } }] : []) ] }) }}",
+    "jsonBody": "={{ JSON.stringify({ chat: { channelId: ($('Ctx').item.json.chat_channel_id || ('TU_WORKSPACE_BOTMAKER-whatsapp-' + $('Ctx').item.json.chat_channel)), contactId: $('Ctx').item.json.contact_id }, messages: [ ...(($('Chequear guardrails').item.json.mensajes || [$('Chequear guardrails').item.json.respuesta_final]).filter(Boolean)).map(t=>({ text: t })), ...($('Chequear guardrails').item.json.pdf_a_enviar ? [{ media: { url: $('Chequear guardrails').item.json.pdf_a_enviar, filename: (($('Chequear guardrails').item.json.pdf_a_enviar.split('/').pop()||'material.pdf').replace(/^[0-9]+-/,'')), mimeType: 'application/pdf' } }] : []) ] }) }}",
     "options": {}
    },
    "id": "bm200000-0000-0000-0000-000000000002",
@@ -903,8 +903,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "notes": "MULTI-TENANT. Busca el canal por whatsappNumber y resuelve qué agente, token de Botmaker e intentId de derivación usar."
@@ -990,8 +990,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "onError": "continueRegularOutput",
@@ -1137,8 +1137,8 @@
    "alwaysOutputData": true,
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "onError": "continueRegularOutput",
@@ -1160,8 +1160,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "notes": "1 SOLA QUERY: agente, guardrails, cursos, PDFs, horarios, feriados, etapas activas y variables. Optimización: reemplaza 5 cargas separadas para minimizar round-trips a la DB."
@@ -1274,8 +1274,8 @@
    ],
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "onError": "continueRegularOutput"
@@ -1312,8 +1312,8 @@
    "alwaysOutputData": true,
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    },
    "onError": "continueRegularOutput"
@@ -1462,8 +1462,8 @@
    },
    "credentials": {
     "postgres": {
-     "id": "nWZKvu4jsnyJP3s2",
-     "name": "maisa test"
+     "id": "POSTGRES_CRED_ID",
+     "name": "Postgres del motor"
     }
    }
   },

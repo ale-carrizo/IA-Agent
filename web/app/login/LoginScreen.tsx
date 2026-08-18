@@ -226,7 +226,7 @@ export default function LoginScreen({ error: errorParam, callbackUrl = '/' }: { 
         <div className="cover-ticker-track">
           {tickerItems.map((_, i) => (
             <React.Fragment key={i}>
-              <span className="t">NODS · Performance & Analítica</span>
+              <span className="t">IA-AGENT · Performance & Analítica</span>
               <span className="d">●</span>
             </React.Fragment>
           ))}
@@ -234,7 +234,7 @@ export default function LoginScreen({ error: errorParam, callbackUrl = '/' }: { 
       </div>
 
       <div className="brand">
-        <span className="brand-label">NODS</span>
+        <span className="brand-label">IA-AGENT</span>
         <span className="brand-sep" />
         <span>Plataforma · <em>Sales AI</em></span>
       </div>
