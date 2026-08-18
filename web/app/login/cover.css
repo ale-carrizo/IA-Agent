@@ -456,3 +456,28 @@
   display: inline-block; animation: cover-spin 0.7s linear infinite;
 }
 @keyframes cover-spin { to { transform: rotate(360deg); } }
+
+/* ── Formulario de credenciales ─────────────────────────────────────────── */
+.cover-fields { display: flex; flex-direction: column; gap: 6px; }
+.cover-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  opacity: .7; margin-top: 10px;
+}
+.cover-input {
+  width: 100%; padding: 12px 14px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05);
+  color: inherit; font-size: 14px; outline: none;
+  transition: border-color .15s ease, background .15s ease;
+}
+.cover-input::placeholder { color: rgba(255,255,255,.32); }
+.cover-input:focus { border-color: rgba(120,160,255,.75); background: rgba(255,255,255,.08); }
+.cover-input:disabled { opacity: .55; }
+.cover-fields .cover-submit { margin-top: 16px; }
+.cover-sep {
+  display: flex; align-items: center; gap: 10px;
+  margin: 16px 0 12px; font-size: 11px; opacity: .5;
+}
+.cover-sep::before, .cover-sep::after {
+  content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.14);
+}
+.cover-submit.ghost { background: transparent; border: 1px solid rgba(255,255,255,.18); }

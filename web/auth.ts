@@ -1,42 +1,66 @@
 import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 
-// Allowlist de acceso (fail-closed). Configurable por entorno:
-//   ALLOWED_EMAIL_DOMAIN=tuempresa.com        -> permite cualquier @tuempresa.com
-//   ALLOWED_EMAILS=juan@x.com,ana@y.com       -> además, mails sueltos
-// Si NADA está configurado, NO se permite el ingreso a nadie.
-const allowedDomain = (process.env.ALLOWED_EMAIL_DOMAIN || "").trim().toLowerCase();
-const allowedEmails = (process.env.ALLOWED_EMAILS || "")
-  .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+import { authConfig } from "./auth.config";
+import { verificarPassword } from "@/lib/password";
+import { buscarParaLogin, registrarIngreso } from "@/lib/usuarios";
 
-function emailPermitido(email: string | null | undefined): boolean {
-  const e = (email || "").toLowerCase();
-  if (!e) return false;
-  if (!allowedDomain && allowedEmails.length === 0) return false; // fail-closed
-  if (allowedEmails.includes(e)) return true;
-  if (allowedDomain && e.endsWith("@" + allowedDomain)) return true;
-  return false;
-}
-
-// Acepta los nombres de Auth.js (AUTH_GOOGLE_*) o los clásicos de Google (GOOGLE_CLIENT_*).
+// Google queda opcional: solo se registra el provider si hay credenciales
+// cargadas. Sin ellas, el panel entra únicamente por email + contraseña.
 const googleId = process.env.AUTH_GOOGLE_ID ?? process.env.GOOGLE_CLIENT_ID;
 const googleSecret = process.env.AUTH_GOOGLE_SECRET ?? process.env.GOOGLE_CLIENT_SECRET;
+const conGoogle = Boolean(googleId && googleSecret);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [Google({ clientId: googleId, clientSecret: googleSecret })],
-  pages: { signIn: "/login" },
-  session: { strategy: "jwt", maxAge: 60 * 60 * 8 }, // 8 horas
-  trustHost: true,
+  ...authConfig,
+  providers: [
+    Credentials({
+      name: "credenciales",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Contraseña", type: "password" },
+      },
+      async authorize(cred) {
+        const email = typeof cred?.email === "string" ? cred.email : "";
+        const password = typeof cred?.password === "string" ? cred.password : "";
+        if (!email || !password) return null;
+
+        const fila = await buscarParaLogin(email);
+
+        // Se verifica la contraseña incluso cuando el usuario no existe o está
+        // inactivo, contra un hash que nunca valida. Así el tiempo de respuesta
+        // no delata qué emails están dados de alta.
+        const hash = fila?.activo ? fila.password_hash : null;
+        const ok = await verificarPassword(password, hash);
+        if (!ok || !fila) return null;
+
+        await registrarIngreso(fila.id);
+        return { id: fila.id, email: fila.email, name: fila.nombre || fila.email, rol: fila.rol };
+      },
+    }),
+    ...(conGoogle ? [Google({ clientId: googleId, clientSecret: googleSecret })] : []),
+  ],
   callbacks: {
-    // Gate de OAuth: solo entra quien pase la allowlist y tenga el mail verificado por Google.
-    signIn({ profile, user }) {
-      const email = profile?.email ?? user?.email;
+    ...authConfig.callbacks,
+    /**
+     * Gate único para los dos caminos: la tabla `usuarios` decide quién entra.
+     * Credentials ya validó en authorize(); acá se cubre Google, que de otro
+     * modo dejaría pasar a cualquiera con cuenta.
+     */
+    async signIn({ account, profile, user }) {
+      if (account?.provider !== "google") return true;
+
       if (profile && (profile as { email_verified?: boolean }).email_verified === false) return false;
-      return emailPermitido(email);
-    },
-    // Usado por el middleware para proteger todas las rutas.
-    authorized({ auth }) {
-      return !!auth?.user;
+
+      const fila = await buscarParaLogin(profile?.email ?? user?.email ?? "");
+      if (!fila || !fila.activo) return false;
+
+      // El rol lo manda la base, no el proveedor.
+      user.id = fila.id;
+      user.rol = fila.rol;
+      await registrarIngreso(fila.id);
+      return true;
     },
   },
 });

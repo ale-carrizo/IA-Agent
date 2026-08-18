@@ -12,5 +12,10 @@ export default async function LoginPage({
   const sp = await searchParams;
   const session = await auth();
   if (session?.user) redirect(sp.callbackUrl || "/");
-  return <LoginScreen error={sp.error} callbackUrl={sp.callbackUrl || "/"} />;
+  // Google es opcional: si no hay credenciales cargadas, el botón ni aparece.
+  const conGoogle = Boolean(
+    (process.env.AUTH_GOOGLE_ID ?? process.env.GOOGLE_CLIENT_ID) &&
+    (process.env.AUTH_GOOGLE_SECRET ?? process.env.GOOGLE_CLIENT_SECRET),
+  );
+  return <LoginScreen error={sp.error} callbackUrl={sp.callbackUrl || "/"} conGoogle={conGoogle} />;
 }
