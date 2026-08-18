@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
 // Allowlist de acceso (fail-closed). Configurable por entorno:
-//   ALLOWED_EMAIL_DOMAIN=gruponods.com        -> permite cualquier @gruponods.com
+//   ALLOWED_EMAIL_DOMAIN=tuempresa.com        -> permite cualquier @tuempresa.com
 //   ALLOWED_EMAILS=juan@x.com,ana@y.com       -> además, mails sueltos
 // Si NADA está configurado, NO se permite el ingreso a nadie.
 const allowedDomain = (process.env.ALLOWED_EMAIL_DOMAIN || "").trim().toLowerCase();

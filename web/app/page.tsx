@@ -9,7 +9,7 @@ import { useSession, signOut } from "next-auth/react";
 import { api, useToast } from "@/lib/ui";
 import { useTheme } from "./providers";
 
-// ─── Paleta clara + acentos NODS (skill: nods-frontend, variante light) ──────
+// ─── Paleta clara + acentos de marca (variante light) ────────────────────────
 const C = {
   bg: "var(--c-bg)", sidebar: "var(--c-sidebar)", card: "var(--c-card)", border: "var(--c-border)",
   text: "var(--c-text)", muted: "var(--c-muted)", faint: "var(--c-faint)",
@@ -72,8 +72,8 @@ export default function DashboardPage() {
   const [periodo, setPeriodo] = useState<Periodo>("dia");
   const [metricaSerie, setMetricaSerie] = useState<"tokens" | "usd">("tokens");
   const [loading, setLoading] = useState(true);
-  const [tenant, setTenant] = useState<string>(""); // scope del main ("" = NODS / global)
-  const [nodsOpen, setNodsOpen] = useState(true); // carpeta NODS
+  const [tenant, setTenant] = useState<string>(""); // scope del main ("" = global)
+  const [raizOpen, setRaizOpen] = useState(true); // carpeta raiz
   const [openTenants, setOpenTenants] = useState<Set<string>>(new Set()); // universidades desplegadas
   const [createOpen, setCreateOpen] = useState(false); // modal crear bot
   const [createTenant, setCreateTenant] = useState(""); // tenant prellenado al crear
@@ -169,20 +169,20 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row font-nods" style={{ background: C.bg, color: C.text }}>
-      {/* ── Sidebar: árbol de carpetas NODS ▸ Universidades ▸ Bots ── */}
+    <div className="min-h-screen flex flex-col md:flex-row font-marca" style={{ background: C.bg, color: C.text }}>
+      {/* ── Sidebar: árbol de carpetas IA-AGENT ▸ Universidades ▸ Bots ── */}
       <aside className="md:w-72 shrink-0 md:h-screen md:sticky md:top-0 p-3 md:p-4 flex flex-col" style={{ background: C.sidebar, borderRight: `1px solid ${C.border}` }}>
         <div className="flex items-center gap-2.5 px-2 pb-3 mb-2" style={{ borderBottom: `1px solid ${C.border}` }}>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-semibold" style={{ background: `linear-gradient(135deg, ${C.blue}, #0F2FA0)` }}>N</div>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-semibold" style={{ background: `linear-gradient(135deg, ${C.blue}, #0F2FA0)` }}>IA</div>
           <div className="text-sm font-semibold">Sales AI</div>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
-          {/* NODS (raíz / empresa) */}
-          <TreeRow level={0} folder open={nodsOpen} active={tenant === ""} icon={<Building2 className="w-4 h-4" />}
-            label="NODS" right={fmtTokens(totalGlobal)} onClick={() => { setNodsOpen((o) => !o); setTenant(""); }} />
+          {/* Raíz */}
+          <TreeRow level={0} folder open={raizOpen} active={tenant === ""} icon={<Building2 className="w-4 h-4" />}
+            label="IA-AGENT" right={fmtTokens(totalGlobal)} onClick={() => { setRaizOpen((o) => !o); setTenant(""); }} />
 
-          {nodsOpen && tenants.map((t) => (
+          {raizOpen && tenants.map((t) => (
             <div key={t.tenant}>
               {/* Universidad */}
               <TreeRow level={1} folder open={openTenants.has(t.tenant)} active={tenant === t.tenant} icon={<GraduationCap className="w-4 h-4" />}
@@ -225,7 +225,7 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-[11px] font-semibold tracking-[0.06em] mb-1 flex items-center gap-1.5" style={{ color: C.muted }}>
-                <span style={{ color: C.blueL }}>NODS</span>
+                <span style={{ color: C.blueL }}>IA-AGENT</span>
                 {tenant && <><ChevronRight className="w-3 h-3" /> <span style={{ color: C.blueL }}>{tenant}</span></>}
               </div>
               <h1 className="text-2xl font-semibold tracking-tight">{tenant || "Todas las universidades"}</h1>
@@ -674,7 +674,7 @@ function CrearBotModal({ open, onClose, onCreated, show, tenants, tenantPrefill 
   const inp = "w-full h-10 rounded-[10px] px-3 text-sm outline-none focus:border-[#1946E3]";
   const inpStyle = { background: "var(--c-card)", border: `1px solid ${C.border}`, color: C.text } as const;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-nods" style={{ background: "rgba(10,12,20,0.55)" }} onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-marca" style={{ background: "rgba(10,12,20,0.55)" }} onClick={onClose}>
       <div className="w-full max-w-lg rounded-2xl p-6 space-y-4" style={{ background: "var(--c-card)", border: `1px solid ${C.border}`, color: C.text, boxShadow: "0 24px 64px rgba(0,0,0,0.35)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-base">Nuevo bot</h2>

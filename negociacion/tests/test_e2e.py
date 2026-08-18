@@ -11,7 +11,7 @@ va en modo determinista y la salida a canales está mockeada.
 
 Es la *definition of done* de V1. Se saltea solo si no hay `DATABASE_URL`:
 
-    export DATABASE_URL=postgres://nods:dev@localhost:5432/agentes_dev
+    export DATABASE_URL=postgres://iaagent:dev@localhost:5432/agentes_dev
     .venv/bin/python -m pytest tests/test_e2e.py -v
 """
 

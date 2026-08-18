@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import LoginScreen from "./LoginScreen";
 
-export const metadata = { title: "Ingresar · NODS" };
+export const metadata = { title: "Ingresar · IA-AGENT" };
 
 export default async function LoginPage({
   searchParams,

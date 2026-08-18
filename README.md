@@ -1,6 +1,6 @@
-# Sales AI Engine — motor de agentes por etapas (estilo maisaedu)
+# IA-AGENT — motor de agentes por etapas
 
-Réplica del patrón de maisaedu: un **motor genérico data-driven** donde
+Un **motor genérico data-driven** donde
 las etapas, herramientas, variables y horarios viven en **Postgres**, y
 **n8n** las lee en runtime. Agregar una etapa = insertar una fila, sin
 tocar el workflow.
@@ -46,7 +46,7 @@ cp .env.example .env          # y cambiá POSTGRES_PASSWORD
 docker compose up -d
 ```
 Los `.sql` de `db/` se corren **solos** la primera vez (schema + seed). Quedan:
-- Postgres en `localhost:5432` (db `agentes`, user `nods`)
+- Postgres en `localhost:5432` (db `agentes`, user `iaagent`)
 - n8n en `http://localhost:5678`
 
 > Si cambiás los `.sql` después, no se vuelven a correr (el volumen ya existe).
@@ -54,7 +54,7 @@ Los `.sql` de `db/` se corren **solos** la primera vez (schema + seed). Quedan:
 
 ### 2. Credencial Postgres en n8n
 En n8n → **Credentials → New → Postgres**:
-- Host: `postgres`  ·  Database: `agentes`  ·  User: `nods`  ·  Password: la tuya  ·  Port: `5432`
+- Host: `postgres`  ·  Database: `agentes`  ·  User: `iaagent`  ·  Password: la tuya  ·  Port: `5432`
 
 (Host es `postgres`, el nombre del servicio en docker, no `localhost`.)
 

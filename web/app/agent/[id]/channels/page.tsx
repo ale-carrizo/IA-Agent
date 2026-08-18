@@ -220,7 +220,7 @@ export default function ChannelsPage({ params }: { params: Promise<{ id: string 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 mt-4">
               <Field label="Nombre" hint='Nombre descriptivo de la línea, ej: "UEES Admisiones"'>
-                <input className={inputCls} value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} placeholder="Grupo Nods" />
+                <input className={inputCls} value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} placeholder="Linea comercial" />
               </Field>
 
               <Field
